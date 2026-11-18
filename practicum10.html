@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Nest</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f4;
+            color: #163020;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 820px;
+            width: 100%;
+        }
+
+        .page-title {
+            text-align: center;
+            font-size: 30px;
+            font-weight: 700;
+            color: #163020;
+            margin-bottom: 24px;
+        }
+
+        /* Card Box Styling */
+        .feature-card {
+            background-color: #ffffff;
+            border: 1.5px solid #4ea377;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .feature-card h2 {
+            font-size: 20px;
+            color: #163020;
+            margin-bottom: 18px;
+            font-weight: 700;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        select, input[type="number"] {
+            padding: 10px 14px;
+            border: 1px solid #c5d6cc;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #163020;
+            background-color: #ffffff;
+            min-width: 190px;
+        }
+
+        .btn-green {
+            background-color: #2c6648;
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-green:hover {
+            background-color: #1d422e;
+        }
+
+        .btn-red {
+            background-color: #c92a2a;
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-red:hover {
+            background-color: #a61e1e;
+        }
+
+        /* Light Green Output Bar */
+        .status-bar {
+            background-color: #e6f2ec;
+            color: #163020;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 14.5px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="page-title">🧩 Puzzle Nest</h1>
+
+        <!-- Card 1: Live Score & XP Estimator -->
+        <div class="feature-card">
+            <h2>1. Puzzle Nest Instant Score & XP Estimator</h2>
+            <div class="controls-row">
+                <select id="puzzleType" onchange="calculateScore()">
+                    <option value="20" data-xp="2.5">Logic Grid (20 pts/puzzle)</option>
+                    <option value="45" data-xp="5.0">Cipher Riddle (45 pts/puzzle)</option>
+                    <option value="110" data-xp="12.5">Master Labyrinth (110 pts/puzzle)</option>
+                </select>
+                <input type="number" id="puzzleCount" value="4" min="0" oninput="calculateScore()" onchange="calculateScore()">
+                <button class="btn-green" onclick="calculateScore()">Calculate Score</button>
+            </div>
+            <div class="status-bar" id="scoreOutput">
+                Estimated Score: 80 pts | Brain XP Gained: 10.0 XP
+            </div>
+        </div>
+
+        <!-- Card 2: Delayed Hint Unlock (setTimeout / clearTimeout) -->
+        <div class="feature-card">
+            <h2>2. Delayed Hint Unlock (setTimeout / clearTimeout)</h2>
+            <div class="controls-row">
+                <button class="btn-green" onclick="scheduleHint()">Unlock Hint (3s Delay)</button>
+                <button class="btn-red" onclick="cancelHint()">Cancel Hint</button>
+            </div>
+            <div class="status-bar" id="hintStatus">
+                Status: Ready to unlock next puzzle clue.
+            </div>
+        </div>
+
+        <!-- Card 3: Live Session Clock & Solved Counter (setInterval / clearInterval) -->
+        <div class="feature-card">
+            <h2>3. Live Hub Clock & Solved Counter (setInterval / clearInterval)</h2>
+            <div class="controls-row">
+                <button class="btn-green" onclick="startLiveFeed()">Start Live Feed</button>
+                <button class="btn-red" onclick="stopLiveFeed()">Stop Live Feed</button>
+            </div>
+            <div class="status-bar" id="liveClock">
+                Live Hub Time: Loading...
+            </div>
+            <div class="status-bar" id="liveCounter">
+                Live Campus Puzzles Solved: 14,820
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Live Score & XP Calculator (updates automatically on number/dropdown change)
+        function calculateScore() {
+            const select = document.getElementById('puzzleType');
+            const ptsPerPuzzle = parseFloat(select.value);
+            const xpPerPuzzle = parseFloat(select.options[select.selectedIndex].getAttribute('data-xp'));
+            const count = parseFloat(document.getElementById('puzzleCount').value) || 0;
+
+            const totalPts = Math.round(ptsPerPuzzle * count);
+            const totalXp = (xpPerPuzzle * count).toFixed(1);
+
+            document.getElementById('scoreOutput').innerText =
+                `Estimated Score: ${totalPts} pts | Brain XP Gained: ${totalXp} XP`;
+        }
+
+        // 2. Delayed Hint Unlock (setTimeout / clearTimeout)
+        let hintTimer = null;
+
+        function scheduleHint() {
+            clearTimeout(hintTimer);
+            document.getElementById('hintStatus').innerText =
+                'Status: Decrypting clue... Hint will appear in 3 seconds.';
+
+            hintTimer = setTimeout(() => {
+                document.getElementById('hintStatus').innerText =
+                    '✓ Hint Unlocked! Check the corner tiles for matching symbols.';
+            }, 3000);
+        }
+
+        function cancelHint() {
+            clearTimeout(hintTimer);
+            document.getElementById('hintStatus').innerText =
+                'Status: Hint unlock cancelled.';
+        }
+
+        // 3. Live Hub Clock & Counter (setInterval / clearInterval)
+        let liveInterval = null;
+        let solvedTotal = 14820;
+
+        function startLiveFeed() {
+            if (liveInterval) return;
+
+            updateLiveMetrics();
+            liveInterval = setInterval(updateLiveMetrics, 1000);
+        }
+
+        function updateLiveMetrics() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText =
+                `Live Hub Time: ${now.toString()}`;
+
+            solvedTotal += Math.floor(Math.random() * 3) + 1;
+            document.getElementById('liveCounter').innerText =
+                `Live Campus Puzzles Solved: ${solvedTotal.toLocaleString()}`;
+        }
+
+        function stopLiveFeed() {
+            clearInterval(liveInterval);
+            liveInterval = null;
+            document.getElementById('liveClock').innerText = 'Live Hub Time: Feed paused';
+        }
+
+        // Start live feed and initialize score automatically on page load
+        window.onload = function () {
+            calculateScore();
+            startLiveFeed();
+        };
+    </script>
+
+</body>
+</html>
